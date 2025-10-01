@@ -264,32 +264,34 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Name and Nickname - allow wrapping
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Flexible(
-                        child: Text(
-                          displayName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                            children: [
+                              TextSpan(text: displayName),
+                              if (nickName != null && nickName.isNotEmpty)
+                                TextSpan(
+                                  text: ' ($nickName)',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                    fontStyle: FontStyle.italic,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                ),
+                            ],
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (nickName != null && nickName.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            '($nickName)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
-                              fontStyle: FontStyle.italic,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
                       if (isCurrentUser) ...[
                         const SizedBox(width: 8),
                         Container(
