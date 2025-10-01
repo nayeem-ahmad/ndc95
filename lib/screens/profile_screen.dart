@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'dart:io';
 import '../services/firebase_service.dart';
+import '../constants/profile_constants.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,10 +14,34 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
-  final _studentIdController = TextEditingController();
+  
+  // Personal Information
   final _nickNameController = TextEditingController();
+  final _dobController = TextEditingController();
+  String? _selectedBloodGroup;
+  String? _selectedHomeDistrict;
+  
+  // Contact Information
+  final _phoneController = TextEditingController();
+  final _altPhoneController = TextEditingController();
   final _addressController = TextEditingController();
+  final _residentialAreaController = TextEditingController();
+  
+  // Academic Information
+  final _studentIdController = TextEditingController();
+  final _registrationIdController = TextEditingController();
+  final _graduationSubjectController = TextEditingController();
+  final _graduationInstitutionController = TextEditingController();
+  
+  // Professional Information
+  final _professionController = TextEditingController();
+  final _professionalDetailsController = TextEditingController();
+  final _companyController = TextEditingController();
+  final _workLocationController = TextEditingController();
+  
+  // Additional
+  String? _selectedPoloSize;
+  final _linkedInController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
   
   bool _isLoading = true;
@@ -32,10 +57,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
-    _studentIdController.dispose();
+    // Personal Information
     _nickNameController.dispose();
+    _dobController.dispose();
+    
+    // Contact Information
+    _phoneController.dispose();
+    _altPhoneController.dispose();
     _addressController.dispose();
+    _residentialAreaController.dispose();
+    
+    // Academic Information
+    _studentIdController.dispose();
+    _registrationIdController.dispose();
+    _graduationSubjectController.dispose();
+    _graduationInstitutionController.dispose();
+    
+    // Professional Information
+    _professionController.dispose();
+    _professionalDetailsController.dispose();
+    _companyController.dispose();
+    _workLocationController.dispose();
+    
+    // Additional
+    _linkedInController.dispose();
+    
     super.dispose();
   }
 
@@ -51,10 +97,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (doc.exists) {
           final data = doc.data() as Map<String, dynamic>;
           setState(() {
-            _phoneController.text = data['phoneNumber'] ?? '';
-            _studentIdController.text = data['studentId'] ?? '';
+            // Personal Information
             _nickNameController.text = data['nickName'] ?? '';
+            _dobController.text = data['dateOfBirth'] ?? '';
+            _selectedBloodGroup = data['bloodGroup'];
+            _selectedHomeDistrict = data['homeDistrict'];
+            
+            // Contact Information
+            _phoneController.text = data['phoneNumber'] ?? '';
+            _altPhoneController.text = data['altPhoneNumber'] ?? '';
             _addressController.text = data['address'] ?? '';
+            _residentialAreaController.text = data['residentialArea'] ?? '';
+            
+            // Academic Information
+            _studentIdController.text = data['studentId'] ?? '';
+            _registrationIdController.text = data['registrationId'] ?? '';
+            _graduationSubjectController.text = data['graduationSubject'] ?? '';
+            _graduationInstitutionController.text = data['graduationInstitution'] ?? '';
+            
+            // Professional Information
+            _professionController.text = data['profession'] ?? '';
+            _professionalDetailsController.text = data['professionalDetails'] ?? '';
+            _companyController.text = data['company'] ?? '';
+            _workLocationController.text = data['workLocation'] ?? '';
+            
+            // Additional
+            _selectedPoloSize = data['poloSize'];
+            _linkedInController.text = data['linkedIn'] ?? '';
+            
             // Use custom photo if available, otherwise Google photo
             _currentPhotoUrl = data['photoUrl'] ?? user.photoURL;
             _isLoading = false;
@@ -201,6 +271,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue.shade400,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null) {
+      setState(() {
+        _dobController.text = '${picked.day}/${picked.month}/${picked.year}';
+      });
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -212,10 +309,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await FirebaseService.updateUserProfile(
           uid: user.uid,
           data: {
-            'phoneNumber': _phoneController.text.trim(),
-            'studentId': _studentIdController.text.trim(),
+            // Personal Information
             'nickName': _nickNameController.text.trim(),
+            'dateOfBirth': _dobController.text.trim(),
+            'bloodGroup': _selectedBloodGroup,
+            'homeDistrict': _selectedHomeDistrict,
+            
+            // Contact Information
+            'phoneNumber': _phoneController.text.trim(),
+            'altPhoneNumber': _altPhoneController.text.trim(),
             'address': _addressController.text.trim(),
+            'residentialArea': _residentialAreaController.text.trim(),
+            
+            // Academic Information
+            'studentId': _studentIdController.text.trim(),
+            'registrationId': _registrationIdController.text.trim(),
+            'graduationSubject': _graduationSubjectController.text.trim(),
+            'graduationInstitution': _graduationInstitutionController.text.trim(),
+            
+            // Professional Information
+            'profession': _professionController.text.trim(),
+            'professionalDetails': _professionalDetailsController.text.trim(),
+            'company': _companyController.text.trim(),
+            'workLocation': _workLocationController.text.trim(),
+            
+            // Additional
+            'poloSize': _selectedPoloSize,
+            'linkedIn': _linkedInController.text.trim(),
           },
         );
 
@@ -272,7 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Profile Picture (Left) with Change Button
+                  // Profile Picture with Change Button
                   Stack(
                     children: [
                       _isUploadingImage
@@ -326,7 +446,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(width: 16),
                   
-                  // Name and Email (Right)
+                  // Name and Email
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,64 +472,175 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Profile Information Card
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Profile Information',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Mobile Number
-                      _buildTextField(
-                        controller: _phoneController,
-                        label: 'Mobile Number',
-                        icon: Icons.phone,
-                        keyboardType: TextInputType.phone,
-                        hint: 'Enter your mobile number',
-                      ),
-                      const SizedBox(height: 16),
-
-                      // NDC Student ID
-                      _buildTextField(
-                        controller: _studentIdController,
-                        label: 'NDC Student ID',
-                        icon: Icons.badge,
-                        hint: 'Enter your NDC student ID',
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Nick Name
-                      _buildTextField(
-                        controller: _nickNameController,
-                        label: 'Nick Name',
-                        icon: Icons.person_outline,
-                        hint: 'Enter your nick name',
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Current Address
-                      _buildTextField(
-                        controller: _addressController,
-                        label: 'Current Address',
-                        icon: Icons.location_on,
-                        hint: 'Enter your current address',
-                        maxLines: 3,
-                      ),
-                    ],
+              // Personal Information Section
+              _buildSectionCard(
+                title: 'Personal Information',
+                children: [
+                  _buildTextField(
+                    controller: _nickNameController,
+                    label: 'Nick Name',
+                    icon: Icons.person_outline,
+                    hint: 'Enter your nick name',
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  _buildDateField(
+                    controller: _dobController,
+                    label: 'Date of Birth',
+                    icon: Icons.cake,
+                    hint: 'Select your date of birth',
+                    onTap: _selectDate,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdownField(
+                    label: 'Blood Group',
+                    icon: Icons.bloodtype,
+                    value: _selectedBloodGroup,
+                    items: ProfileConstants.bloodGroups,
+                    hint: 'Select blood group',
+                    onChanged: (value) => setState(() => _selectedBloodGroup = value),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdownField(
+                    label: 'Home District',
+                    icon: Icons.home,
+                    value: _selectedHomeDistrict,
+                    items: ProfileConstants.districts,
+                    hint: 'Select home district',
+                    onChanged: (value) => setState(() => _selectedHomeDistrict = value),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Contact Information Section
+              _buildSectionCard(
+                title: 'Contact Information',
+                children: [
+                  _buildTextField(
+                    controller: _phoneController,
+                    label: 'Mobile Number',
+                    icon: Icons.phone,
+                    keyboardType: TextInputType.phone,
+                    hint: 'Enter your mobile number',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _altPhoneController,
+                    label: 'Alternative Mobile (Optional)',
+                    icon: Icons.phone_android,
+                    keyboardType: TextInputType.phone,
+                    hint: 'Enter alternative number',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _addressController,
+                    label: 'Current Address',
+                    icon: Icons.location_on,
+                    hint: 'Enter your current address',
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _residentialAreaController,
+                    label: 'Residential Area (Optional)',
+                    icon: Icons.location_city,
+                    hint: 'e.g., Dhanmondi, Dhaka',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Academic Information Section
+              _buildSectionCard(
+                title: 'Academic Information',
+                children: [
+                  _buildTextField(
+                    controller: _studentIdController,
+                    label: 'NDC Student ID (Roll #)',
+                    icon: Icons.badge,
+                    hint: 'Enter your NDC roll number',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _registrationIdController,
+                    label: 'Registration ID (Optional)',
+                    icon: Icons.numbers,
+                    hint: 'Enter registration ID',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _graduationSubjectController,
+                    label: 'Graduation Subject (Optional)',
+                    icon: Icons.school,
+                    hint: 'e.g., Economics, Physics, etc.',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _graduationInstitutionController,
+                    label: 'Graduation Institution (Optional)',
+                    icon: Icons.account_balance,
+                    hint: 'e.g., Dhaka University',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Professional Information Section
+              _buildSectionCard(
+                title: 'Professional Information',
+                children: [
+                  _buildTextField(
+                    controller: _professionController,
+                    label: 'Profession (Optional)',
+                    icon: Icons.work,
+                    hint: 'e.g., Doctor, Engineer, Banker',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _professionalDetailsController,
+                    label: 'Professional Details (Optional)',
+                    icon: Icons.description,
+                    hint: 'Designation, responsibilities, etc.',
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _companyController,
+                    label: 'Company/Organization (Optional)',
+                    icon: Icons.business,
+                    hint: 'Enter company name',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _workLocationController,
+                    label: 'Work Location (Optional)',
+                    icon: Icons.location_city,
+                    hint: 'e.g., Dhaka, Bangladesh',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Additional Information Section
+              _buildSectionCard(
+                title: 'Additional Information',
+                children: [
+                  _buildDropdownField(
+                    label: 'Polo/T-Shirt Size (Optional)',
+                    icon: Icons.checkroom,
+                    value: _selectedPoloSize,
+                    items: ProfileConstants.shirtSizes,
+                    hint: 'Select your size',
+                    onChanged: (value) => setState(() => _selectedPoloSize = value),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _linkedInController,
+                    label: 'LinkedIn Profile (Optional)',
+                    icon: Icons.link,
+                    hint: 'Enter LinkedIn URL',
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 
@@ -449,6 +680,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String hint,
+    required VoidCallback onTap,
+  }) {
+    return TextFormField(
+      controller: controller,
+      readOnly: true,
+      onTap: onTap,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: Colors.blue.shade400),
+        suffixIcon: Icon(Icons.calendar_today, color: Colors.grey.shade400),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required IconData icon,
+    required String? value,
+    required List<String> items,
+    required String hint,
+    required Function(String?) onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: Colors.blue.shade400),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      items: items.map((String item) {
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Text(item),
+        );
+      }).toList(),
+      onChanged: onChanged,
+      isExpanded: true,
     );
   }
 
