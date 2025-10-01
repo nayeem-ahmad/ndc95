@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'dart:io';
 import '../services/firebase_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -14,9 +17,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _studentIdController = TextEditingController();
   final _nickNameController = TextEditingController();
   final _addressController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
   
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isUploadingImage = false;
+  String? _currentPhotoUrl;
 
   @override
   void initState() {
@@ -37,6 +43,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = FirebaseService.currentUser;
       if (user != null) {
+        setState(() {
+          _currentPhotoUrl = user.photoURL;
+        });
+        
         final doc = await FirebaseService.getUserProfile(user.uid);
         if (doc.exists) {
           final data = doc.data() as Map<String, dynamic>;
@@ -45,6 +55,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _studentIdController.text = data['studentId'] ?? '';
             _nickNameController.text = data['nickName'] ?? '';
             _addressController.text = data['address'] ?? '';
+            // Use custom photo if available, otherwise Google photo
+            _currentPhotoUrl = data['photoUrl'] ?? user.photoURL;
             _isLoading = false;
           });
         } else {
@@ -59,6 +71,131 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
+  }
+
+  Future<void> _pickAndCropImage(ImageSource source) async {
+    try {
+      // Pick image
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 80,
+      );
+
+      if (pickedFile == null) return;
+
+      // Crop image
+      final CroppedFile? croppedFile = await ImageCropper().cropImage(
+        sourcePath: pickedFile.path,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Profile Picture',
+            toolbarColor: Colors.blue.shade400,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(
+            title: 'Crop Profile Picture',
+            aspectRatioLockEnabled: true,
+          ),
+        ],
+      );
+
+      if (croppedFile == null) return;
+
+      // Upload to Firebase Storage
+      setState(() => _isUploadingImage = true);
+
+      final user = FirebaseService.currentUser;
+      if (user != null) {
+        final downloadUrl = await FirebaseService.uploadProfilePicture(
+          uid: user.uid,
+          imageFile: File(croppedFile.path),
+        );
+
+        if (downloadUrl != null && mounted) {
+          setState(() {
+            _currentPhotoUrl = downloadUrl;
+            _isUploadingImage = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (mounted) {
+          setState(() => _isUploadingImage = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to upload profile picture'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() => _isUploadingImage = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'Change Profile Picture',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Icon(Icons.camera_alt, color: Colors.blue.shade400),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndCropImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_library, color: Colors.blue.shade400),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndCropImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _saveProfile() async {
@@ -132,23 +269,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Profile Picture (Left)
-                  if (user?.photoURL != null)
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundImage: NetworkImage(user!.photoURL!),
-                      backgroundColor: Colors.blue.shade100,
-                    )
-                  else
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.blue.shade100,
-                      child: Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.blue.shade400,
+                  // Profile Picture (Left) with Change Button
+                  Stack(
+                    children: [
+                      _isUploadingImage
+                          ? Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.blue.shade100,
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          : _currentPhotoUrl != null && _currentPhotoUrl!.isNotEmpty
+                              ? CircleAvatar(
+                                  radius: 40,
+                                  backgroundImage: NetworkImage(_currentPhotoUrl!),
+                                  backgroundColor: Colors.blue.shade100,
+                                )
+                              : CircleAvatar(
+                                  radius: 40,
+                                  backgroundColor: Colors.blue.shade100,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: Colors.blue.shade400,
+                                  ),
+                                ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _showImageSourceDialog,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade400,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
+                  ),
                   const SizedBox(width: 16),
                   
                   // Name and Email (Right)

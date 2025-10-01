@@ -1,13 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'dart:io';
 
 /// Firebase service to handle authentication, database, and messaging
 class FirebaseService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  static final FirebaseStorage _storage = FirebaseStorage.instance;
   static final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // Get current user
@@ -219,6 +222,37 @@ class FirebaseService {
     if (data != null) {
       data['updatedAt'] = FieldValue.serverTimestamp();
       await _firestore.collection('users').doc(uid).update(data);
+    }
+  }
+
+  /// Upload profile picture to Firebase Storage
+  static Future<String?> uploadProfilePicture({
+    required String uid,
+    required File imageFile,
+  }) async {
+    try {
+      // Create a reference to the file location
+      final storageRef = _storage.ref().child('profile_pictures/$uid.jpg');
+      
+      // Upload the file
+      final uploadTask = await storageRef.putFile(imageFile);
+      
+      // Get the download URL
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      
+      // Update user profile with new photo URL
+      await updateUserProfile(
+        uid: uid,
+        data: {'photoUrl': downloadUrl},
+      );
+      
+      // Update Firebase Auth profile
+      await _auth.currentUser?.updatePhotoURL(downloadUrl);
+      
+      return downloadUrl;
+    } catch (e) {
+      print('Error uploading profile picture: $e');
+      return null;
     }
   }
 
