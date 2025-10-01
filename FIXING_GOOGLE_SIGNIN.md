@@ -57,7 +57,7 @@ If it's empty, you need to add one!
 2. Select your **NDC95** project
 3. Click the ⚙️ gear icon → **Project Settings**
 4. Scroll down to **Your apps** section
-5. Find your Android app: `com.example.login_app`
+5. Find your Android app: `com.nayeemahmad.ndc95`
 6. Scroll down to **SHA certificate fingerprints**
 7. Click **Add fingerprint**
 8. Paste your SHA-1 certificate
@@ -135,12 +135,14 @@ If you can't run the commands, you can:
 2. Check the build logs for the SHA-1
 3. Or use Firebase Console to generate one automatically
 
+**Note:** The app package name is now `com.nayeemahmad.ndc95`
+
 ---
 
 ## 📝 Why This Happens
 
 Google Sign-In uses OAuth 2.0 which requires:
-- ✅ App package name registered
+- ✅ App package name registered (`com.nayeemahmad.ndc95`)
 - ✅ SHA-1 certificate registered  ← **THIS IS MISSING**
 - ✅ OAuth client created (automatic)
 - ✅ Sign-in method enabled
