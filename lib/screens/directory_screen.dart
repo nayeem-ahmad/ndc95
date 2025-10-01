@@ -276,6 +276,20 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (nickName != null && nickName.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '($nickName)',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                       if (isCurrentUser) ...[
                         const SizedBox(width: 8),
                         Container(
@@ -299,17 +313,6 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                       ],
                     ],
                   ),
-                  if (nickName != null && nickName.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      '($nickName)',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -334,6 +337,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   const SizedBox(height: 2),
                   Row(
                     children: [
+                      // Mobile Number
                       Icon(
                         Icons.phone,
                         size: 14,
@@ -347,28 +351,28 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                           color: Colors.grey.shade700,
                         ),
                       ),
-                    ],
-                  ),
-                  if (studentId != null && studentId.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
+                      // Student ID (side by side with mobile)
+                      if (studentId != null && studentId.isNotEmpty) ...[
+                        const SizedBox(width: 16),
                         Icon(
                           Icons.badge,
                           size: 14,
                           color: Colors.grey.shade600,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          'ID: $studentId',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
+                        Flexible(
+                          child: Text(
+                            'ID: $studentId',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ],
               ),
             ),
