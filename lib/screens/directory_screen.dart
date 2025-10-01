@@ -202,6 +202,8 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                       email: userData['email'] ?? 'No Email',
                       phoneNumber: userData['phoneNumber'] ?? 'No Phone',
                       photoUrl: userData['photoUrl'],
+                      nickName: userData['nickName'],
+                      studentId: userData['studentId'],
                     );
                   },
                 );
@@ -219,6 +221,8 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     required String email,
     required String phoneNumber,
     String? photoUrl,
+    String? nickName,
+    String? studentId,
   }) {
     final currentUserId = FirebaseService.currentUser?.uid;
     final isCurrentUser = userId == currentUserId;
@@ -295,6 +299,17 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                       ],
                     ],
                   ),
+                  if (nickName != null && nickName.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '($nickName)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -334,6 +349,26 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                       ),
                     ],
                   ),
+                  if (studentId != null && studentId.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.badge,
+                          size: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'ID: $studentId',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
