@@ -24,6 +24,11 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  bool _isSuperAdmin() {
+    final user = FirebaseService.currentUser;
+    return user?.email?.toLowerCase() == 'nayeem.ahmad@gmail.com';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,8 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: Colors.white,
         elevation: 2,
         actions: [
-          // Show admin import button only on Profile tab (for testing)
-          if (_selectedIndex == 1)
+          // Show admin import button only for super admin on Profile tab
+          if (_selectedIndex == 1 && _isSuperAdmin())
             IconButton(
               icon: const Icon(Icons.upload_file),
               onPressed: () {
