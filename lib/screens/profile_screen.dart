@@ -83,19 +83,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (pickedFile == null) return;
 
-      // Crop image
+      // Crop image with square aspect ratio
       final CroppedFile? croppedFile = await ImageCropper().cropImage(
         sourcePath: pickedFile.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'Crop Profile Picture',
             toolbarColor: Colors.blue.shade400,
             toolbarWidgetColor: Colors.white,
             lockAspectRatio: true,
+            initAspectRatio: CropAspectRatioPreset.square,
           ),
           IOSUiSettings(
             title: 'Crop Profile Picture',
             aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
           ),
         ],
       );
