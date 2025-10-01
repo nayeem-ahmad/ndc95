@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'services/firebase_service.dart';
 import 'screens/home_screen.dart';
+import 'screens/admin_import_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,7 @@ class MainApp extends StatelessWidget {
       home: const AuthWrapper(),
       routes: {
         '/home': (context) => const HomeScreen(),
+        '/admin-import': (context) => const AdminImportScreen(),
       },
     );
   }

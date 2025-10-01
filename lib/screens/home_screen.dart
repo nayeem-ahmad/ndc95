@@ -33,6 +33,15 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: Colors.white,
         elevation: 2,
         actions: [
+          // Show admin import button only on Profile tab (for testing)
+          if (_selectedIndex == 1)
+            IconButton(
+              icon: const Icon(Icons.upload_file),
+              onPressed: () {
+                Navigator.of(context).pushNamed('/admin-import');
+              },
+              tooltip: 'Import CSV Data',
+            ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
