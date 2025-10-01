@@ -55,13 +55,18 @@ class FirebaseService {
   /// Sign in with Google
   static Future<UserCredential?> signInWithGoogle() async {
     try {
+      print('🔵 Starting Google Sign-In...');
+      
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
         // User canceled the sign-in
+        print('⚠️ User canceled Google Sign-In');
         return null;
       }
+
+      print('✅ Google account selected: ${googleUser.email}');
 
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
@@ -72,23 +77,38 @@ class FirebaseService {
         idToken: googleAuth.idToken,
       );
 
+      print('🔵 Signing in to Firebase...');
       // Sign in to Firebase with the Google credential
       final userCredential = await _auth.signInWithCredential(credential);
 
+      print('✅ Firebase sign-in successful: ${userCredential.user?.email}');
+
       // Create user profile if this is a new user
       if (userCredential.additionalUserInfo?.isNewUser ?? false) {
-        await createUserProfile(
-          uid: userCredential.user!.uid,
-          email: userCredential.user!.email ?? '',
-          displayName: userCredential.user!.displayName,
-          photoUrl: userCredential.user!.photoURL,
-        );
+        print('🔵 Creating user profile in Firestore...');
+        try {
+          await createUserProfile(
+            uid: userCredential.user!.uid,
+            email: userCredential.user!.email ?? '',
+            displayName: userCredential.user!.displayName,
+            photoUrl: userCredential.user!.photoURL,
+          );
+          print('✅ User profile created successfully');
+        } catch (firestoreError) {
+          print('⚠️ Firestore error (non-fatal): $firestoreError');
+          print('Note: You may need to enable Firestore API in Firebase Console');
+          // Don't throw - allow sign-in to proceed even if Firestore fails
+        }
+      } else {
+        print('ℹ️ Existing user signed in');
       }
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
+      print('❌ Firebase Auth Error: ${e.code} - ${e.message}');
       throw _handleAuthException(e);
     } catch (e) {
+      print('❌ Google Sign-In Error: $e');
       throw 'Failed to sign in with Google: ${e.toString()}';
     }
   }
