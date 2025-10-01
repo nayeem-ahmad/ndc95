@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'services/firebase_service.dart';
+import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,8 +24,27 @@ class MainApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      home: const AuthWrapper(),
+      routes: {
+        '/home': (context) => const HomeScreen(),
+      },
     );
+  }
+}
+
+// Check if user is already signed in
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseService.currentUser;
+    
+    if (user != null) {
+      return const HomeScreen();
+    }
+    
+    return const LoginScreen();
   }
 }
 
@@ -48,19 +68,16 @@ class _LoginScreenState extends State<LoginScreen> {
       final userCredential = await FirebaseService.signInWithGoogle();
 
       if (userCredential != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome ${userCredential.user?.displayName ?? "User"}!'),
-            backgroundColor: Colors.green,
-          ),
+        // Navigate to home screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
-        // TODO: Navigate to home screen
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text('Sign in failed: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
