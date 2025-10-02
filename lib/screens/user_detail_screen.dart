@@ -599,7 +599,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<String>(
-        value: value,
+        value: value?.isEmpty == true ? null : value,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon),
@@ -610,8 +610,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           fillColor: _isEditing ? Colors.white : Colors.grey.shade100,
         ),
         items: [
-          const DropdownMenuItem(value: null, child: Text('Not specified')),
-          ...items.map((item) => DropdownMenuItem(value: item, child: Text(item))),
+          const DropdownMenuItem<String>(value: null, child: Text('Not specified')),
+          ...items.map((item) => DropdownMenuItem<String>(value: item, child: Text(item))),
         ],
         onChanged: _isEditing ? onChanged : null,
       ),
