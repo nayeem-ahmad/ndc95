@@ -188,10 +188,14 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   
                   // Filter by group if selected
                   if (_selectedGroup != null) {
-                    final userGroup = (data['group'] ?? '').toString().trim();
+                    // Handle both string and number types, and empty values
+                    final userGroupRaw = data['group'];
+                    final userGroup = userGroupRaw?.toString().trim() ?? '';
+                    
                     // Debug: Print for troubleshooting
-                    print('Comparing group: userGroup="$userGroup" vs selectedGroup="$_selectedGroup" for user ${data['displayName']}');
-                    if (userGroup != _selectedGroup) return false;
+                    print('Comparing group: userGroup="$userGroup" (type: ${userGroupRaw.runtimeType}) vs selectedGroup="$_selectedGroup" for user ${data['displayName']}');
+                    
+                    if (userGroup.isEmpty || userGroup != _selectedGroup) return false;
                   }
                   
                   // Filter by search query

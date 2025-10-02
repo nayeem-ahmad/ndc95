@@ -47,6 +47,9 @@ class _AdminScreenState extends State<AdminScreen> {
         final currentGroup = data['group']?.toString();
         final calculatedGroup = _getGroupFromStudentId(studentId);
 
+        // Debug logging
+        print('Processing user: ${data['displayName']}, StudentID: $studentId, CurrentGroup: "$currentGroup", CalculatedGroup: "$calculatedGroup"');
+
         // Only update if group is missing or different from calculated value
         if (currentGroup != calculatedGroup) {
           await doc.reference.update({
@@ -54,8 +57,10 @@ class _AdminScreenState extends State<AdminScreen> {
             'groupFixedAt': FieldValue.serverTimestamp(),
           });
           _updatedRecords++;
+          print('  ✓ Updated group to "$calculatedGroup"');
         } else {
           _skippedRecords++;
+          print('  - Skipped (already correct)');
         }
       }
 
