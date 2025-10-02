@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/firebase_service.dart';
 import 'directory_screen.dart';
 import 'profile_screen.dart';
+import 'admin_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,10 +14,62 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const DirectoryScreen(),
-    const ProfileScreen(),
-  ];
+  bool _isSuperAdmin() {
+    final user = FirebaseService.currentUser;
+    return user?.email?.toLowerCase() == 'nayeem.ahmad@gmail.com';
+  }
+
+  List<Widget> _getScreens() {
+    if (_isSuperAdmin()) {
+      return [
+        const DirectoryScreen(),
+        const ProfileScreen(),
+        const AdminScreen(),
+      ];
+    } else {
+      return [
+        const DirectoryScreen(),
+        const ProfileScreen(),
+      ];
+    }
+  }
+
+  List<BottomNavigationBarItem> _getNavItems() {
+    if (_isSuperAdmin()) {
+      return const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.people),
+          label: 'Directory',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'My Profile',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.admin_panel_settings),
+          label: 'Admin',
+        ),
+      ];
+    } else {
+      return const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.people),
+          label: 'Directory',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'My Profile',
+        ),
+      ];
+    }
+  }
+
+  String _getAppBarTitle() {
+    if (_selectedIndex == 0) return 'Directory';
+    if (_selectedIndex == 1) return 'My Profile';
+    if (_selectedIndex == 2 && _isSuperAdmin()) return 'Admin';
+    return 'NDC95';
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -24,16 +77,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  bool _isSuperAdmin() {
-    final user = FirebaseService.currentUser;
-    return user?.email?.toLowerCase() == 'nayeem.ahmad@gmail.com';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final screens = _getScreens();
+    final navItems = _getNavItems();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedIndex == 0 ? 'Directory' : 'My Profile'),
+        title: Text(_getAppBarTitle()),
         backgroundColor: Colors.blue.shade400,
         foregroundColor: Colors.white,
         elevation: 2,
@@ -59,18 +110,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _screens[_selectedIndex],
+      body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Directory',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'My Profile',
-          ),
-        ],
+        items: navItems,
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue.shade700,
         onTap: _onItemTapped,
