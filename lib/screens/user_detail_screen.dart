@@ -71,10 +71,32 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     _workLocationController = TextEditingController(text: widget.userData['workLocation'] ?? '');
     _linkedInController = TextEditingController(text: widget.userData['linkedIn'] ?? '');
     
-    _selectedBloodGroup = widget.userData['bloodGroup'];
+    // Normalize blood group data (convert old formats like "0+ve" to "O+")
+    _selectedBloodGroup = _normalizeBloodGroup(widget.userData['bloodGroup']);
     _selectedHomeDistrict = widget.userData['homeDistrict'];
     _selectedPoloSize = widget.userData['poloSize'];
     _currentPhotoUrl = widget.userData['photoUrl'];
+  }
+  
+  // Helper method to normalize blood group values from old CSV format
+  String? _normalizeBloodGroup(String? bloodGroup) {
+    if (bloodGroup == null || bloodGroup.isEmpty) return null;
+    
+    // Convert old CSV formats to standard format
+    final normalized = bloodGroup
+        .replaceAll('0', 'O')  // Convert zero to letter O
+        .replaceAll('ve', '')  // Remove 've' suffix
+        .replaceAll('+', '+')  // Ensure + is standard
+        .replaceAll('-', '-')  // Ensure - is standard
+        .trim()
+        .toUpperCase();
+    
+    // Only return if it's a valid blood group from our list
+    if (ProfileConstants.bloodGroups.contains(normalized)) {
+      return normalized;
+    }
+    
+    return null;  // Invalid blood group, will show as "Not specified"
   }
 
   @override
@@ -596,10 +618,13 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   }
 
   Widget _buildDropdownField(String label, String? value, List<String> items, Function(String?) onChanged, IconData icon) {
+    // Only use the value if it exists in the items list, otherwise treat as null
+    final validValue = (value != null && value.isNotEmpty && items.contains(value)) ? value : null;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<String>(
-        value: value?.isEmpty == true ? null : value,
+        value: validValue,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon),
