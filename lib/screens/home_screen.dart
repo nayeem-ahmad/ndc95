@@ -24,6 +24,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkAdminAccess() async {
+    // Check if user is superadmin by email (backward compatibility)
+    if (_isSuperAdmin()) {
+      setState(() {
+        _hasAdminAccess = true;
+        _isLoading = false;
+      });
+      return;
+    }
+    
+    // Check role-based access
     final hasAccess = await RoleService.isGroupAdmin();
     setState(() {
       _hasAdminAccess = hasAccess;
