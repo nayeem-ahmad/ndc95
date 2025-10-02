@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firebase_service.dart';
+import 'user_detail_screen.dart';
 
 class DirectoryScreen extends StatefulWidget {
   const DirectoryScreen({super.key});
@@ -233,12 +234,28 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            // Profile Picture
-            if (photoUrl != null && photoUrl.isNotEmpty)
+      child: InkWell(
+        onTap: () async {
+          // Fetch full user data before navigating
+          final userDoc = await FirebaseService.getUserProfile(userId);
+          if (userDoc.exists && mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => UserDetailScreen(
+                  userId: userId,
+                  userData: userDoc.data() as Map<String, dynamic>,
+                ),
+              ),
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              // Profile Picture
+              if (photoUrl != null && photoUrl.isNotEmpty)
               CircleAvatar(
                 radius: 30,
                 backgroundImage: NetworkImage(photoUrl),
@@ -381,6 +398,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }
