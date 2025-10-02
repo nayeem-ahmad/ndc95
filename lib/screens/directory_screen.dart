@@ -210,6 +210,21 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                          phone.contains(_searchQuery);
                 }).toList();
 
+                // Sort by Student ID
+                users.sort((a, b) {
+                  final dataA = a.data() as Map<String, dynamic>;
+                  final dataB = b.data() as Map<String, dynamic>;
+                  final studentIdA = dataA['studentId']?.toString() ?? '';
+                  final studentIdB = dataB['studentId']?.toString() ?? '';
+                  
+                  // If either is empty, push to end
+                  if (studentIdA.isEmpty && studentIdB.isEmpty) return 0;
+                  if (studentIdA.isEmpty) return 1;
+                  if (studentIdB.isEmpty) return -1;
+                  
+                  return studentIdA.compareTo(studentIdB);
+                });
+
                 if (users.isEmpty) {
                   return Center(
                     child: Column(
@@ -237,23 +252,72 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: users.length,
-                  itemBuilder: (context, index) {
-                    final userData = users[index].data() as Map<String, dynamic>;
-                    final userId = users[index].id;
-                    
-                    return _buildUserCard(
-                      userId: userId,
-                      displayName: userData['displayName'] ?? 'No Name',
-                      email: userData['email'] ?? 'No Email',
-                      phoneNumber: userData['phoneNumber'] ?? 'No Phone',
-                      photoUrl: userData['photoUrl'],
-                      nickName: userData['nickName'],
-                      studentId: userData['studentId'],
-                    );
-                  },
+                return Column(
+                  children: [
+                    // Count badge
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.blue.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.people,
+                            size: 18,
+                            color: Colors.blue.shade700,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${users.length} ${users.length == 1 ? 'contact' : 'contacts'}',
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          if (_selectedGroup != null || _searchQuery.isNotEmpty) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              'found',
+                              style: TextStyle(
+                                color: Colors.blue.shade600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    // User list
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: users.length,
+                        itemBuilder: (context, index) {
+                          final userData = users[index].data() as Map<String, dynamic>;
+                          final userId = users[index].id;
+                          
+                          return _buildUserCard(
+                            userId: userId,
+                            displayName: userData['displayName'] ?? 'No Name',
+                            email: userData['email'] ?? 'No Email',
+                            phoneNumber: userData['phoneNumber'] ?? 'No Phone',
+                            photoUrl: userData['photoUrl'],
+                            nickName: userData['nickName'],
+                            studentId: userData['studentId'],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
