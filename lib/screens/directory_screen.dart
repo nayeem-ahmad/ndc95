@@ -404,23 +404,30 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                         color: Colors.grey.shade600,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        phoneNumber,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
+                      Expanded(
+                        child: Text(
+                          phoneNumber,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // Student ID (side by side with mobile)
-                      if (studentId != null && studentId.isNotEmpty) ...[
-                        const SizedBox(width: 16),
+                    ],
+                  ),
+                  // Student ID on separate row
+                  if (studentId != null && studentId.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
                         Icon(
                           Icons.badge,
                           size: 14,
                           color: Colors.grey.shade600,
                         ),
                         const SizedBox(width: 4),
-                        Flexible(
+                        Expanded(
                           child: Text(
                             'ID: $studentId',
                             style: TextStyle(
@@ -431,8 +438,8 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                           ),
                         ),
                       ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ],
               ),
             ),
