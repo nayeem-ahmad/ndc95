@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firebase_service.dart';
+import '../services/role_service.dart';
+import '../models/user_role.dart';
+import '../widgets/role_assignment_dialog.dart';
 import 'member_form_screen.dart';
 
 class ManageMembersScreen extends StatefulWidget {
@@ -13,6 +16,20 @@ class ManageMembersScreen extends StatefulWidget {
 class _ManageMembersScreenState extends State<ManageMembersScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _canAssignRoles = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserPermissions();
+  }
+
+  Future<void> _loadUserPermissions() async {
+    final canAssign = await RoleService.canAssignRoles();
+    setState(() {
+      _canAssignRoles = canAssign;
+    });
+  }
 
   @override
   void dispose() {
@@ -21,6 +38,20 @@ class _ManageMembersScreenState extends State<ManageMembersScreen> {
   }
 
   Future<void> _deleteMember(String userId, String userName) async {
+    // Check permission
+    final canDelete = await RoleService.canDeleteMember(userId);
+    if (!canDelete) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You do not have permission to delete this member'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
@@ -73,6 +104,22 @@ class _ManageMembersScreenState extends State<ManageMembersScreen> {
   }
 
   Future<void> _addOrEditMember({String? userId, Map<String, dynamic>? userData}) async {
+    // Check edit permission if editing
+    if (userId != null) {
+      final canEdit = await RoleService.canEditMember(userId);
+      if (!canEdit) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You do not have permission to edit this member'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -86,6 +133,26 @@ class _ManageMembersScreenState extends State<ManageMembersScreen> {
     // Refresh the list if changes were made
     if (result == true && mounted) {
       setState(() {}); // Trigger rebuild to refresh StreamBuilder
+    }
+  }
+
+  Future<void> _assignRole(String userId, String userName, Map<String, dynamic> userData) async {
+    final currentRoleString = userData['role'] as String?;
+    final currentRole = UserRoleExtension.fromString(currentRoleString);
+    final userGroup = userData['group'] as String?;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => RoleAssignmentDialog(
+        userId: userId,
+        userName: userName,
+        currentRole: currentRole,
+        userGroup: userGroup,
+      ),
+    );
+
+    if (result == true && mounted) {
+      setState(() {}); // Refresh to show updated role
     }
   }
 
@@ -250,6 +317,22 @@ class _ManageMembersScreenState extends State<ManageMembersScreen> {
                             final email = data['email'] ?? '';
                             final studentId = data['studentId'] ?? '';
                             final photoUrl = data['photoUrl'] ?? '';
+                            final roleString = data['role'] as String?;
+                            final role = UserRoleExtension.fromString(roleString);
+
+                            // Determine role badge color
+                            Color getRoleBadgeColor() {
+                              switch (role) {
+                                case UserRole.superAdmin:
+                                  return Colors.red;
+                                case UserRole.admin:
+                                  return Colors.orange;
+                                case UserRole.groupAdmin:
+                                  return Colors.green;
+                                case UserRole.member:
+                                  return Colors.grey;
+                              }
+                            }
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -259,29 +342,87 @@ class _ManageMembersScreenState extends State<ManageMembersScreen> {
                               ),
                               child: ListTile(
                                 contentPadding: const EdgeInsets.all(12),
-                                leading: CircleAvatar(
-                                  radius: 28,
-                                  backgroundColor: Colors.blue.shade100,
-                                  backgroundImage: photoUrl.isNotEmpty
-                                      ? NetworkImage(photoUrl)
-                                      : null,
-                                  child: photoUrl.isEmpty
-                                      ? Text(
-                                          name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                          style: TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.blue.shade700,
+                                leading: Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 28,
+                                      backgroundColor: Colors.blue.shade100,
+                                      backgroundImage: photoUrl.isNotEmpty
+                                          ? NetworkImage(photoUrl)
+                                          : null,
+                                      child: photoUrl.isEmpty
+                                          ? Text(
+                                              name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                              style: TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.blue.shade700,
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                    if (role != UserRole.member)
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: getRoleBadgeColor(),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 2,
+                                            ),
                                           ),
-                                        )
-                                      : null,
+                                          child: Icon(
+                                            role == UserRole.superAdmin
+                                                ? Icons.admin_panel_settings
+                                                : role == UserRole.admin
+                                                    ? Icons.manage_accounts
+                                                    : Icons.supervisor_account,
+                                            size: 12,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                                title: Text(
-                                  name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                    if (role != UserRole.member)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: getRoleBadgeColor().withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: getRoleBadgeColor(),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          role.displayName,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: getRoleBadgeColor(),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,6 +465,15 @@ class _ManageMembersScreenState extends State<ManageMembersScreen> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    if (_canAssignRoles)
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.admin_panel_settings,
+                                          color: Colors.purple.shade700,
+                                        ),
+                                        onPressed: () => _assignRole(userId, name, data),
+                                        tooltip: 'Assign Role',
+                                      ),
                                     IconButton(
                                       icon: const Icon(Icons.edit, color: Colors.blue),
                                       onPressed: () => _addOrEditMember(

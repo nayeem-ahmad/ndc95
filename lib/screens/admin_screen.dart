@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firebase_service.dart';
+import '../services/role_service.dart';
+import '../models/user_role.dart';
 import 'manage_members_screen.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -16,6 +18,28 @@ class _AdminScreenState extends State<AdminScreen> {
   int _totalRecords = 0;
   int _updatedRecords = 0;
   int _skippedRecords = 0;
+  UserRole? _currentUserRole;
+  String? _currentUserGroup;
+  bool _isLoadingRole = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final user = FirebaseService.currentUser;
+    if (user != null) {
+      final role = await RoleService.getUserRole(user.uid);
+      final group = await RoleService.getUserGroup(user.uid);
+      setState(() {
+        _currentUserRole = role;
+        _currentUserGroup = group;
+        _isLoadingRole = false;
+      });
+    }
+  }
 
   // Helper method to extract group from student ID (3rd digit)
   String _getGroupFromStudentId(String? studentId) {
@@ -100,6 +124,34 @@ class _AdminScreenState extends State<AdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingRole) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final isSuperAdmin = _currentUserRole == UserRole.superAdmin;
+    final isAdmin = _currentUserRole == UserRole.admin || isSuperAdmin;
+    final isGroupAdmin = _currentUserRole == UserRole.groupAdmin;
+
+    String getManageMembersTitle() {
+      if (isSuperAdmin || isAdmin) {
+        return 'Manage All Members';
+      } else if (isGroupAdmin) {
+        return 'Manage Group ${_currentUserGroup ?? ''} Members';
+      }
+      return 'Manage Members';
+    }
+
+    String getManageMembersDescription() {
+      if (isSuperAdmin) {
+        return 'Add new members, edit existing member information, delete members, and assign roles (Super Admin, Admin, Group Admin).';
+      } else if (isAdmin) {
+        return 'Add new members, edit existing member information, and delete members from the directory.';
+      } else if (isGroupAdmin) {
+        return 'Add new members to Group ${_currentUserGroup ?? ''}, edit member information, and delete members in your group.';
+      }
+      return 'Manage members in the directory.';
+    }
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -158,6 +210,102 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
             const SizedBox(height: 24),
 
+            // Current Role Information
+            if (_currentUserRole != null) ...[
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _currentUserRole == UserRole.superAdmin
+                                ? Icons.admin_panel_settings
+                                : _currentUserRole == UserRole.admin
+                                    ? Icons.manage_accounts
+                                    : Icons.supervisor_account,
+                            color: Colors.purple.shade700,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Your Role',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.purple.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _currentUserRole!.displayName,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.purple.shade900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _currentUserRole!.description,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.purple.shade700,
+                                    ),
+                                  ),
+                                  if (_currentUserGroup != null && _currentUserGroup!.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.group,
+                                          size: 16,
+                                          color: Colors.purple.shade700,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Group ${_currentUserGroup}',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.purple.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
             // Manage Members Section
             Card(
               elevation: 2,
@@ -177,18 +325,19 @@ class _AdminScreenState extends State<AdminScreen> {
                           size: 24,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Manage Members',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                        Expanded(
+                          child: Text(
+                            getManageMembersTitle(),
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Add new members, edit existing member information, or delete members from the directory. '
-                      'Email uniqueness is automatically validated when adding or editing members.',
+                      getManageMembersDescription(),
                       style: TextStyle(
                         color: Colors.grey.shade700,
                         fontSize: 14,
