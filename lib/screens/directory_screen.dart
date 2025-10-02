@@ -13,6 +13,7 @@ class DirectoryScreen extends StatefulWidget {
 class _DirectoryScreenState extends State<DirectoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String? _selectedGroup;  // null means "All Groups"
 
   @override
   void dispose() {
@@ -72,6 +73,38 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               },
             ),
           ),
+
+          // Group Filter Chips
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip('All', null),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Group 1', '1'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Group 2', '2'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Group 3', '3'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Group 4', '4'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Group 5', '5'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Group 6', '6'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Group 7', '7'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Group 8', '8'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Group 9', '9'),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // User List
           Expanded(
@@ -149,11 +182,19 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   );
                 }
 
-                // Filter users based on search query
+                // Filter users based on search query and group
                 final users = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  
+                  // Filter by group if selected
+                  if (_selectedGroup != null) {
+                    final userGroup = (data['group'] ?? '').toString();
+                    if (userGroup != _selectedGroup) return false;
+                  }
+                  
+                  // Filter by search query
                   if (_searchQuery.isEmpty) return true;
                   
-                  final data = doc.data() as Map<String, dynamic>;
                   final name = (data['displayName'] ?? '').toString().toLowerCase();
                   final email = (data['email'] ?? '').toString().toLowerCase();
                   final phone = (data['phoneNumber'] ?? '').toString().toLowerCase();
@@ -399,6 +440,32 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
         ),
       ),
     ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String? groupValue) {
+    final isSelected = _selectedGroup == groupValue;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _selectedGroup = selected ? groupValue : null;
+        });
+      },
+      backgroundColor: Colors.white,
+      selectedColor: Colors.blue.shade100,
+      checkmarkColor: Colors.blue.shade700,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.blue.shade700 : Colors.grey.shade700,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected ? Colors.blue.shade400 : Colors.grey.shade300,
+        ),
+      ),
     );
   }
 }

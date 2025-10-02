@@ -32,10 +32,10 @@ class CsvImporter {
           // Parse CSV row
           final userData = _parseUserData(row, i);
           
-          // Create a document ID based on registration ID or generate one
+          // Create a document ID based on student ID or generate one
           String docId;
-          if (userData['registrationId'] != null && userData['registrationId'].toString().isNotEmpty) {
-            docId = 'csv_${userData['registrationId'].toString().replaceAll(' ', '_')}';
+          if (userData['studentId'] != null && userData['studentId'].toString().isNotEmpty) {
+            docId = 'csv_${userData['studentId'].toString().replaceAll(' ', '_')}';
           } else {
             docId = 'csv_row_$i';
           }
@@ -47,7 +47,7 @@ class CsvImporter {
           );
           
           successCount++;
-          print('✅ Imported: ${userData['displayName']} (${userData['registrationId']})');
+          print('✅ Imported: ${userData['displayName']} (${userData['studentId']})');
           
         } catch (e) {
           errorCount++;
@@ -77,10 +77,10 @@ class CsvImporter {
   static Map<String, dynamic> _parseUserData(List<dynamic> row, int rowIndex) {
     // CSV columns based on your file:
     // 0: Sl. #
-    // 1: Reg. ID
+    // 1: Reg. ID (will be skipped - not used)
     // 2: Name
     // 3: Nick Name
-    // 4: NDC Roll #
+    // 4: NDC Roll # (Student ID)
     // 5: Blood Group
     // 6: Home District
     // 7: DoB
@@ -100,11 +100,18 @@ class CsvImporter {
       return '';
     }
 
+    String _getGroupFromStudentId(String studentId) {
+      if (studentId.length < 3) return '';
+      return studentId.substring(2, 3);  // Get the 3rd character
+    }
+
+    final studentId = _getValue(4);
+
     return {
       'displayName': _getValue(2),
       'nickName': _getValue(3),
-      'registrationId': _getValue(1),
-      'studentId': _getValue(4),
+      'studentId': studentId,
+      'group': _getGroupFromStudentId(studentId),
       'bloodGroup': _getValue(5),
       'homeDistrict': _getValue(6),
       'dateOfBirth': _parseDate(_getValue(7)),

@@ -34,7 +34,6 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   late TextEditingController _addressController;
   late TextEditingController _residentialAreaController;
   late TextEditingController _studentIdController;
-  late TextEditingController _registrationIdController;
   late TextEditingController _graduationSubjectController;
   late TextEditingController _graduationInstitutionController;
   late TextEditingController _professionController;
@@ -62,7 +61,6 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     _addressController = TextEditingController(text: widget.userData['address'] ?? '');
     _residentialAreaController = TextEditingController(text: widget.userData['residentialArea'] ?? '');
     _studentIdController = TextEditingController(text: widget.userData['studentId'] ?? '');
-    _registrationIdController = TextEditingController(text: widget.userData['registrationId'] ?? '');
     _graduationSubjectController = TextEditingController(text: widget.userData['graduationSubject'] ?? '');
     _graduationInstitutionController = TextEditingController(text: widget.userData['graduationInstitution'] ?? '');
     _professionController = TextEditingController(text: widget.userData['profession'] ?? '');
@@ -98,6 +96,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     
     return null;  // Invalid blood group, will show as "Not specified"
   }
+  
+  // Helper method to extract group from student ID (3rd digit)
+  String _getGroupFromStudentId(String? studentId) {
+    if (studentId == null || studentId.length < 3) {
+      return '';
+    }
+    return studentId.substring(2, 3);  // Get the 3rd character (index 2)
+  }
 
   @override
   void dispose() {
@@ -108,7 +114,6 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     _addressController.dispose();
     _residentialAreaController.dispose();
     _studentIdController.dispose();
-    _registrationIdController.dispose();
     _graduationSubjectController.dispose();
     _graduationInstitutionController.dispose();
     _professionController.dispose();
@@ -228,6 +233,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     });
 
     try {
+      final studentId = _studentIdController.text.trim();
       final updates = {
         'nickName': _nickNameController.text.trim(),
         'dateOfBirth': _dobController.text.trim(),
@@ -237,8 +243,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         'alternatePhone': _altPhoneController.text.trim(),
         'address': _addressController.text.trim(),
         'residentialArea': _residentialAreaController.text.trim(),
-        'studentId': _studentIdController.text.trim(),
-        'registrationId': _registrationIdController.text.trim(),
+        'studentId': studentId,
+        'group': _getGroupFromStudentId(studentId),
         'graduationSubject': _graduationSubjectController.text.trim(),
         'graduationInstitution': _graduationInstitutionController.text.trim(),
         'profession': _professionController.text.trim(),
@@ -468,7 +474,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                   Icons.school,
                   [
                     _buildTextField('Student ID', _studentIdController, Icons.badge),
-                    _buildTextField('Registration ID', _registrationIdController, Icons.app_registration),
+                    _buildReadOnlyField('Group', _getGroupFromStudentId(_studentIdController.text), Icons.group),
                     _buildTextField('Graduation Subject', _graduationSubjectController, Icons.menu_book),
                     _buildTextField('Graduation Institution', _graduationInstitutionController, Icons.account_balance),
                   ],
@@ -571,6 +577,26 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             ...children,
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyField(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        initialValue: value.isEmpty ? 'Not available' : value,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+        ),
+        enabled: false,
+        style: TextStyle(color: Colors.grey.shade700),
       ),
     );
   }
