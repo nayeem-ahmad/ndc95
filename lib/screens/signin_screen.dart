@@ -99,14 +99,14 @@ class _SignInScreenState extends State<SignInScreen> {
       await AuthService.sendVerificationCode(email);
       
       if (mounted) {
-        // Show success message with instruction
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-              '✅ Verification code sent! Check Firestore > verificationCodes collection to see your code.',
+              '✅ Verification code sent to your email! Please check your inbox.',
             ),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 5),
+            duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: 'OK',
               textColor: Colors.white,
