@@ -131,6 +131,15 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               tooltip: 'Import CSV Data',
             ),
+          // Show update role button on Profile tab (for first-time setup)
+          if (_selectedIndex == 1)
+            IconButton(
+              icon: const Icon(Icons.admin_panel_settings),
+              onPressed: () {
+                Navigator.of(context).pushNamed('/update-role');
+              },
+              tooltip: 'Update Role (One-time Setup)',
+            ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {

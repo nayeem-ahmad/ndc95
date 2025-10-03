@@ -199,11 +199,15 @@ class FirebaseService {
     String? phoneNumber,
     String? photoUrl,
   }) async {
+    // Check if email is the superadmin email
+    final role = email.toLowerCase() == 'nayeem.ahmad@gmail.com' ? 'superadmin' : 'member';
+    
     await _firestore.collection('users').doc(uid).set({
       'email': email,
       'displayName': displayName ?? '',
       'phoneNumber': phoneNumber ?? '',
       'photoUrl': photoUrl ?? '',
+      'role': role,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });

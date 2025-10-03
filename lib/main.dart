@@ -5,6 +5,7 @@ import 'services/firebase_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/admin_import_screen.dart';
 import 'screens/signin_screen.dart';
+import 'screens/update_role_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,7 @@ class MainApp extends StatelessWidget {
       routes: {
         '/home': (context) => const HomeScreen(),
         '/admin-import': (context) => const AdminImportScreen(),
+        '/update-role': (context) => const UpdateRoleScreen(),
       },
     );
   }

@@ -12,38 +12,42 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Helper function to get user role
+    // Helper function to get user role (with safe check)
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+             : null;
     }
     
     // Helper function to check if user is admin
     function isAdmin() {
-      return isAuthenticated() && getUserRole() in ['admin', 'superAdmin'];
+      return isAuthenticated() && getUserRole() in ['admin', 'superadmin', 'superAdmin'];
     }
     
     // Helper function to check if user is super admin
     function isSuperAdmin() {
-      return isAuthenticated() && getUserRole() == 'superAdmin';
+      return isAuthenticated() && getUserRole() in ['superadmin', 'superAdmin'];
     }
     
     // Helper function to check if user is group admin
     function isGroupAdmin() {
-      return isAuthenticated() && getUserRole() in ['groupAdmin', 'admin', 'superAdmin'];
+      return isAuthenticated() && getUserRole() in ['groupAdmin', 'admin', 'superadmin', 'superAdmin'];
     }
     
     // Users collection
     match /users/{userId} {
       // Anyone can create their own user document during signup
-      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // Admins can create any user document (for CSV import)
+      allow create: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
       
       // Users can read their own data, admins can read all
       allow read: if isOwner(userId) || isAdmin();
       
-      // Users can update their own data (except role)
+      // Users can update their own data
+      // Allow updating role if user email is nayeem.ahmad@gmail.com (TEMPORARY)
       // Admins can update anyone's data
-      allow update: if (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])) 
-                    || isAdmin();
+      allow update: if isOwner(userId) || isAdmin()
+                    || (isAuthenticated() && request.auth.token.email.lower() == 'nayeem.ahmad@gmail.com');
       
       // Only super admins can delete users
       allow delete: if isSuperAdmin();
