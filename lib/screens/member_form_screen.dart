@@ -45,6 +45,7 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
   
   bool get _isEditMode => widget.userId != null;
   String _originalEmail = ''; // To track if email changed
+  String _originalStudentId = ''; // To track if student ID changed
 
   @override
   void initState() {
@@ -75,6 +76,7 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
     _selectedPoloSize = widget.userData?['poloSize'];
     
     _originalEmail = widget.userData?['email'] ?? '';
+    _originalStudentId = widget.userData?['studentId'] ?? '';
   }
 
   @override
@@ -127,6 +129,32 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
     }
   }
 
+  // Check if Student ID is unique in the database
+  Future<bool> _isStudentIdUnique(String studentId) async {
+    try {
+      // Empty student ID is allowed
+      if (studentId.isEmpty) {
+        return true;
+      }
+
+      // If editing and student ID hasn't changed, it's valid
+      if (_isEditMode && studentId == _originalStudentId) {
+        return true;
+      }
+
+      final QuerySnapshot result = await FirebaseService.firestore
+          .collection('users')
+          .where('studentId', isEqualTo: studentId)
+          .limit(1)
+          .get();
+
+      return result.docs.isEmpty;
+    } catch (e) {
+      print('Error checking Student ID uniqueness: $e');
+      return false;
+    }
+  }
+
   Future<void> _saveMember() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -134,13 +162,29 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
 
     // Check email uniqueness
     final email = _emailController.text.trim();
-    final isUnique = await _isEmailUnique(email);
+    final isEmailUnique = await _isEmailUnique(email);
     
-    if (!isUnique) {
+    if (!isEmailUnique) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('This email is already registered in the system.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Check Student ID uniqueness
+    final studentId = _studentIdController.text.trim();
+    final isStudentIdUnique = await _isStudentIdUnique(studentId);
+    
+    if (!isStudentIdUnique) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This Student ID is already registered in the system.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -153,7 +197,6 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
     });
 
     try {
-      final studentId = _studentIdController.text.trim();
       final memberData = {
         'displayName': _displayNameController.text.trim(),
         'email': email.toLowerCase(),

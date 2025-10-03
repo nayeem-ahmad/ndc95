@@ -20,6 +20,11 @@ Added comprehensive member management functionality for superadmin users with em
   - Checks if email already exists in database
   - Shows error message if email is duplicate
   - Allows keeping same email when editing existing member
+- **Student ID Uniqueness Validation**: 
+  - Checks if Student ID already exists in database
+  - Shows error message if Student ID is duplicate
+  - Allows keeping same Student ID when editing existing member
+  - Empty Student ID is allowed
 - **Required Fields**:
   - Full Name (displayName)
   - Email (with format validation)
@@ -40,9 +45,9 @@ Added comprehensive member management functionality for superadmin users with em
 - Description explains add/edit/delete capabilities
 - Placed above "Fix Group Fields" section
 
-## Email Uniqueness Implementation
+## Email and Student ID Uniqueness Implementation
 
-### How It Works:
+### Email Uniqueness:
 ```dart
 Future<bool> _isEmailUnique(String email) async {
   // If editing and email hasn't changed, it's valid
@@ -61,13 +66,39 @@ Future<bool> _isEmailUnique(String email) async {
 }
 ```
 
+### Student ID Uniqueness:
+```dart
+Future<bool> _isStudentIdUnique(String studentId) async {
+  // Empty student ID is allowed
+  if (studentId.isEmpty) {
+    return true;
+  }
+
+  // If editing and student ID hasn't changed, it's valid
+  if (_isEditMode && studentId == _originalStudentId) {
+    return true;
+  }
+
+  // Query Firestore for existing Student ID
+  final QuerySnapshot result = await FirebaseService.firestore
+      .collection('users')
+      .where('studentId', isEqualTo: studentId)
+      .limit(1)
+      .get();
+
+  return result.docs.isEmpty;
+}
+```
+
 ### Validation Flow:
 1. User fills out form and clicks save
 2. Form validation runs (required fields, email format)
 3. Email uniqueness check queries Firestore
 4. If email exists and it's not the same member, show error
-5. If unique, proceed with save operation
-6. Success message displayed and returns to member list
+5. Student ID uniqueness check queries Firestore
+6. If Student ID exists and it's not the same member, show error
+7. If both unique, proceed with save operation
+8. Success message displayed and returns to member list
 
 ## User Interface
 
