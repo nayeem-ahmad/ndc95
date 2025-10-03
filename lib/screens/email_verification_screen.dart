@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import '../services/auth_service.dart';
+import '../services/firebase_service.dart';
 import 'set_password_screen.dart';
 import 'home_screen.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
   final String email;
   final bool isExistingUser;
+  final String? studentId; // Optional: if signing in via Student ID
 
   const EmailVerificationScreen({
     super.key,
     required this.email,
     required this.isExistingUser,
+    this.studentId,
   });
 
   @override
@@ -92,6 +95,29 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       final isValid = await AuthService.verifyCode(widget.email, code);
 
       if (isValid && mounted) {
+        // If signing in via Student ID, update the studentId field
+        if (widget.studentId != null && widget.studentId!.isNotEmpty) {
+          try {
+            // Get current user's document
+            final userQuery = await FirebaseService.firestore
+                .collection('users')
+                .where('email', isEqualTo: widget.email)
+                .limit(1)
+                .get();
+            
+            if (userQuery.docs.isNotEmpty) {
+              final userId = userQuery.docs.first.id;
+              await FirebaseService.firestore
+                  .collection('users')
+                  .doc(userId)
+                  .update({'studentId': widget.studentId});
+            }
+          } catch (e) {
+            // Log but don't fail the verification
+            debugPrint('Error updating studentId: $e');
+          }
+        }
+        
         if (widget.isExistingUser) {
           // Existing user - check if they have password
           try {
