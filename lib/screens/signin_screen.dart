@@ -173,7 +173,8 @@ class _SignInScreenState extends State<SignInScreen> {
                         
                         // Title
                         Text(
-                          'Welcome Notredamian 95',
+                          'Welcome\nNotredamian 95',
+                          textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.grey.shade800,
