@@ -8,16 +8,17 @@ The NDC95 app now has a comprehensive authentication system with multiple sign-i
 ### 1. Sign In Screen (First Screen)
 **File:** `lib/screens/signin_screen.dart`
 
-This is the first screen users see after app loads. It provides email-based sign-in.
+This is the first screen users see after app loads. It provides email-based and Google sign-in options.
 
 **Features:**
 - Email input field with validation
-- Checks if email exists in the database
-- Sends verification code to registered email
+- "Sign In with Email" button - checks if email exists and sends verification code
+- **"Sign In with Google" button** - Google OAuth sign-in
+- OR divider between email and Google options
 - Links to Sign Up screen at the bottom
 - Clean UI with gradient background
 
-**User Flow:**
+**User Flow - Email:**
 1. User enters their email
 2. System checks if email exists
 3. If exists: Sends 6-digit verification code
@@ -25,9 +26,17 @@ This is the first screen users see after app loads. It provides email-based sign
 5. User enters password (if set) or signs in with Google credentials
 6. Redirected to Home screen
 
+**User Flow - Google:**
+1. User clicks "Sign In with Google"
+2. Google authentication dialog opens
+3. User selects Google account
+4. System verifies account exists or creates new one
+5. Redirected to Home screen
+
 **Error Handling:**
 - Shows message if email not found: "No account found with this email. Please sign up first."
 - Validates email format
+- Handles Google sign-in errors gracefully
 
 ---
 
@@ -259,7 +268,10 @@ Shows first 2 characters and full domain:
 - [ ] Verification code sent successfully
 - [ ] Code verification works
 - [ ] Password entry works for email users
+- [ ] **Google sign-in button works**
+- [ ] **Google OAuth flow completes successfully**
 - [ ] Redirects to home after successful sign-in
+- [ ] **Both email and Google disabled during loading**
 
 ### Sign Up Flow
 - [ ] All three buttons visible and styled correctly
@@ -292,10 +304,12 @@ Shows first 2 characters and full domain:
 ### Design Consistency
 - Gradient backgrounds (blue → purple)
 - Consistent button styling:
-  - Google: White with grey border
-  - Email: Blue outline
-  - Student ID: Green outline
+  - Email Sign In: Blue solid button
+  - Google Sign In: White with grey border (matches Sign Up screen)
+  - Email: Blue outline (Sign Up screen)
+  - Student ID: Green outline (Sign Up screen)
 - Card-based forms with elevation
+- OR divider between options
 - Proper spacing and padding
 
 ### Accessibility
