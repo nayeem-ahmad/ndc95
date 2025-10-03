@@ -173,7 +173,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         
                         // Title
                         Text(
-                          'Welcome Back',
+                          'Welcome Notredamian 95',
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.grey.shade800,
@@ -181,7 +181,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Sign in to your account',
+                          'Let\'s connect',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.grey.shade600,
