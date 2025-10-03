@@ -317,6 +317,103 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     }
   }
 
+  Future<void> _showCodeFromFirestore() async {
+    try {
+      final doc = await FirebaseService.firestore
+          .collection('verificationCodes')
+          .doc(widget.email.toLowerCase())
+          .get();
+      
+      if (!doc.exists || !mounted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No verification code found in database'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+      
+      final data = doc.data();
+      final code = data?['code'] ?? 'Not found';
+      
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.developer_mode, color: Colors.orange.shade700),
+                const SizedBox(width: 8),
+                const Text('Development Mode'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your verification code:',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200, width: 2),
+                  ),
+                  child: Text(
+                    code,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 8,
+                      color: Colors.orange.shade900,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Email: ${widget.email}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Auto-fill the code
+                  for (int i = 0; i < code.length && i < 6; i++) {
+                    _codeControllers[i].text = code[i];
+                  }
+                },
+                child: const Text('Auto-Fill Code'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error fetching code: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -494,6 +591,23 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Development helper - Show code from Firestore
+              Center(
+                child: OutlinedButton.icon(
+                  onPressed: _showCodeFromFirestore,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange.shade700,
+                    side: BorderSide(color: Colors.orange.shade400, width: 1.5),
+                  ),
+                  icon: Icon(Icons.code, size: 18, color: Colors.orange.shade700),
+                  label: const Text(
+                    'Show Code (Dev Mode)',
+                    style: TextStyle(fontSize: 13),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),

@@ -99,6 +99,22 @@ class _SignInScreenState extends State<SignInScreen> {
       await AuthService.sendVerificationCode(email);
       
       if (mounted) {
+        // Show success message with instruction
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              '✅ Verification code sent! Check Firestore > verificationCodes collection to see your code.',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+        
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => EmailVerificationScreen(

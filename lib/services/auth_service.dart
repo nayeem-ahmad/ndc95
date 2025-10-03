@@ -32,17 +32,30 @@ class AuthService {
     // Generate 6-digit code
     final code = _generateVerificationCode();
     
-    // Store code and expiry (10 minutes)
+    // Store code in memory
     _verificationCodes[email.toLowerCase()] = code;
     _codeExpiry[email.toLowerCase()] = DateTime.now().add(const Duration(minutes: 10));
     
-    // In production, send email via Firebase Functions or backend
-    // For now, just print it (you can implement email sending later)
+    // Store code in Firestore for easy retrieval during testing
+    // In production, this should be replaced with actual email sending
+    try {
+      await _firestore.collection('verificationCodes').doc(email.toLowerCase()).set({
+        'code': code,
+        'email': email.toLowerCase(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'expiresAt': DateTime.now().add(const Duration(minutes: 10)).toIso8601String(),
+      });
+      print('✅ Verification code stored in Firestore for $email: $code');
+    } catch (e) {
+      print('⚠️ Failed to store code in Firestore: $e');
+    }
+    
+    // Log to console for debugging
     print('📧 Verification code for $email: $code');
     print('⏰ Code expires in 10 minutes');
     
     // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
-    // For development, the code is logged to console
+    // For development, the code is stored in Firestore and logged to console
   }
 
   /// Verify the code entered by user
