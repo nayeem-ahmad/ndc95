@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../services/firebase_service.dart';
 import '../services/role_service.dart';
-import 'directory_screen.dart';
-import 'profile_screen.dart';
 import 'admin_screen.dart';
+import 'directory_screen.dart';
+import 'home_dashboard_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   bool _hasAdminAccess = false;
   bool _isLoading = true;
+  final GlobalKey<DirectoryScreenState> _directoryKey = GlobalKey<DirectoryScreenState>();
 
   @override
   void initState() {
@@ -49,13 +51,15 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> _getScreens() {
     if (_hasAdminAccess) {
       return [
-        const DirectoryScreen(),
+        HomeDashboardScreen(onGroupSelected: _handleGroupSelected),
+        DirectoryScreen(key: _directoryKey),
         const ProfileScreen(),
         const AdminScreen(),
       ];
     } else {
       return [
-        const DirectoryScreen(),
+        HomeDashboardScreen(onGroupSelected: _handleGroupSelected),
+        DirectoryScreen(key: _directoryKey),
         const ProfileScreen(),
       ];
     }
@@ -64,6 +68,10 @@ class _HomeScreenState extends State<HomeScreen> {
   List<BottomNavigationBarItem> _getNavItems() {
     if (_hasAdminAccess) {
       return const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home_filled),
+          label: 'Home',
+        ),
         BottomNavigationBarItem(
           icon: Icon(Icons.people),
           label: 'Directory',
@@ -80,6 +88,10 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       return const [
         BottomNavigationBarItem(
+          icon: Icon(Icons.home_filled),
+          label: 'Home',
+        ),
+        BottomNavigationBarItem(
           icon: Icon(Icons.people),
           label: 'Directory',
         ),
@@ -92,15 +104,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getAppBarTitle() {
-    if (_selectedIndex == 0) return 'Directory';
-    if (_selectedIndex == 1) return 'My Profile';
-    if (_selectedIndex == 2 && _hasAdminAccess) return 'Admin';
+    if (_selectedIndex == 0) return 'Home';
+    if (_selectedIndex == 1) return 'Directory';
+    if (_selectedIndex == 2) return 'My Profile';
+    if (_selectedIndex == 3 && _hasAdminAccess) return 'Admin';
     return 'NDC95';
   }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+    });
+  }
+
+  void _handleGroupSelected(String group) {
+    setState(() {
+      _selectedIndex = 1;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _directoryKey.currentState?.applyGroupFilter(group);
     });
   }
 
@@ -122,24 +145,6 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: Colors.white,
         elevation: 2,
         actions: [
-          // Show admin import button only for super admin on Profile tab
-          if (_selectedIndex == 1 && _isSuperAdmin())
-            IconButton(
-              icon: const Icon(Icons.upload_file),
-              onPressed: () {
-                Navigator.of(context).pushNamed('/admin-import');
-              },
-              tooltip: 'Import CSV Data',
-            ),
-          // Show update role button on Profile tab (for first-time setup)
-          if (_selectedIndex == 1)
-            IconButton(
-              icon: const Icon(Icons.admin_panel_settings),
-              onPressed: () {
-                Navigator.of(context).pushNamed('/update-role');
-              },
-              tooltip: 'Update Role (One-time Setup)',
-            ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -156,7 +161,10 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: navItems,
         currentIndex: _selectedIndex,
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.blue.shade700,
+        unselectedItemColor: Colors.grey.shade500,
+        showUnselectedLabels: true,
         onTap: _onItemTapped,
       ),
     );

@@ -7,13 +7,15 @@ class DirectoryScreen extends StatefulWidget {
   const DirectoryScreen({super.key});
 
   @override
-  State<DirectoryScreen> createState() => _DirectoryScreenState();
+  State<DirectoryScreen> createState() => DirectoryScreenState();
 }
 
-class _DirectoryScreenState extends State<DirectoryScreen> {
+class DirectoryScreenState extends State<DirectoryScreen> {
+  static const List<String> _groupOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String? _selectedGroup;  // null means "All Groups"
+  String? _selectedGroup; // null means "All"
 
   @override
   void dispose() {
@@ -21,313 +23,265 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     super.dispose();
   }
 
+  void applyGroupFilter(String? group) {
+    setState(() {
+      _selectedGroup = group;
+      _searchQuery = '';
+      _searchController.text = '';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.blue.shade50,
-            Colors.white,
-          ],
-        ),
-      ),
-      child: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search by name or email...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
-            ),
-          ),
+    return Column(
+      children: [
+        _buildToolbar(),
+        Container(height: 1, color: Colors.grey.shade200),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseService.firestore.collection('users').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          // Group Filter Chips
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('All', null),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Group 1', '1'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Group 2', '2'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Group 3', '3'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Group 4', '4'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Group 5', '5'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Group 6', '6'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Group 7', '7'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Group 8', '8'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Group 9', '9'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+              if (snapshot.hasError) {
+                return _buildErrorState(snapshot.error);
+              }
 
-          // User List
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseService.firestore.collection('users').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: Colors.red.shade300,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Error loading users',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            snapshot.error.toString(),
-                            style: TextStyle(color: Colors.grey.shade600),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Make sure Firestore API is enabled in Firebase Console',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No users found',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Be the first to register!',
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                // Filter users based on search query and group
-                final users = snapshot.data!.docs.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  
-                  // Filter by group if selected
-                  if (_selectedGroup != null) {
-                    // Handle both string and number types, and empty values
-                    final userGroupRaw = data['group'];
-                    final userGroup = userGroupRaw?.toString().trim() ?? '';
-                    
-                    // Debug: Print for troubleshooting
-                    print('Comparing group: userGroup="$userGroup" (type: ${userGroupRaw.runtimeType}) vs selectedGroup="$_selectedGroup" for user ${data['displayName']}');
-                    
-                    if (userGroup.isEmpty || userGroup != _selectedGroup) return false;
-                  }
-                  
-                  // Filter by search query
-                  if (_searchQuery.isEmpty) return true;
-                  
-                  final name = (data['displayName'] ?? '').toString().toLowerCase();
-                  final email = (data['email'] ?? '').toString().toLowerCase();
-                  final phone = (data['phoneNumber'] ?? '').toString().toLowerCase();
-                  
-                  return name.contains(_searchQuery) ||
-                         email.contains(_searchQuery) ||
-                         phone.contains(_searchQuery);
-                }).toList();
-
-                // Sort by Student ID
-                users.sort((a, b) {
-                  final dataA = a.data() as Map<String, dynamic>;
-                  final dataB = b.data() as Map<String, dynamic>;
-                  final studentIdA = dataA['studentId']?.toString() ?? '';
-                  final studentIdB = dataB['studentId']?.toString() ?? '';
-                  
-                  // If either is empty, push to end
-                  if (studentIdA.isEmpty && studentIdB.isEmpty) return 0;
-                  if (studentIdA.isEmpty) return 1;
-                  if (studentIdB.isEmpty) return -1;
-                  
-                  return studentIdA.compareTo(studentIdB);
-                });
-
-                if (users.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No results found',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Try a different search term',
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return Column(
-                  children: [
-                    // Count badge
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.blue.shade200,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.people,
-                            size: 18,
-                            color: Colors.blue.shade700,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${users.length} ${users.length == 1 ? 'contact' : 'contacts'}',
-                            style: TextStyle(
-                              color: Colors.blue.shade700,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          if (_selectedGroup != null || _searchQuery.isNotEmpty) ...[
-                            const SizedBox(width: 4),
-                            Text(
-                              'found',
-                              style: TextStyle(
-                                color: Colors.blue.shade600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    // User list
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: users.length,
-                        itemBuilder: (context, index) {
-                          final userData = users[index].data() as Map<String, dynamic>;
-                          final userId = users[index].id;
-                          
-                          return _buildUserCard(
-                            userId: userId,
-                            displayName: userData['displayName'] ?? 'No Name',
-                            email: userData['email'] ?? 'No Email',
-                            phoneNumber: userData['phoneNumber'] ?? 'No Phone',
-                            photoUrl: userData['photoUrl'],
-                            nickName: userData['nickName'],
-                            studentId: userData['studentId'],
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return _buildEmptyState(
+                  icon: Icons.people_outline,
+                  title: 'No users found',
+                  subtitle: 'Be the first to register!',
                 );
-              },
-            ),
+              }
+
+              final filteredUsers = _filterAndSortUsers(snapshot.data!.docs);
+
+              if (filteredUsers.isEmpty) {
+                return _buildEmptyState(
+                  icon: Icons.search_off,
+                  title: 'No results found',
+                  subtitle: 'Try a different search term',
+                );
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildCountBadge(filteredUsers.length),
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      itemCount: filteredUsers.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Colors.grey.shade200,
+                      ),
+                      itemBuilder: (context, index) {
+                        final doc = filteredUsers[index];
+                        final userData = doc.data() as Map<String, dynamic>;
+                        return _buildUserRow(
+                          userId: doc.id,
+                          displayName: userData['displayName'] ?? 'No Name',
+                          email: userData['email'] ?? 'No Email',
+                          phoneNumber: userData['phoneNumber'] ?? 'No Phone',
+                          photoUrl: userData['photoUrl'],
+                          nickName: userData['nickName'],
+                          studentId: userData['studentId'],
+                          group: userData['group']?.toString(),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToolbar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(
+        children: [
+          Expanded(child: _buildSearchField()),
+          const SizedBox(width: 12),
+          _buildGroupDropdown(),
         ],
       ),
     );
   }
 
-  Widget _buildUserCard({
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        hintText: 'Search name, email, or phone',
+        prefixIcon: const Icon(Icons.search, size: 20),
+        suffixIcon: _searchQuery.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear, size: 18),
+                onPressed: () {
+                  setState(() {
+                    _searchController.clear();
+                    _searchQuery = '';
+                  });
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.blue.shade400, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      ),
+      onChanged: (value) {
+        setState(() {
+          _searchQuery = value.toLowerCase();
+        });
+      },
+    );
+  }
+
+  Widget _buildGroupDropdown() {
+    return SizedBox(
+      width: 150,
+      child: DropdownButtonFormField<String?>(
+        key: ValueKey(_selectedGroup),
+        initialValue: _selectedGroup,
+        decoration: InputDecoration(
+          labelText: 'Group',
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.blue.shade400, width: 1.5),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+        ),
+        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+        items: [
+          const DropdownMenuItem<String?>(
+            value: null,
+            child: Text('All groups'),
+          ),
+          ..._groupOptions.map(
+            (group) => DropdownMenuItem<String?>(
+              value: group,
+              child: Text('Group $group'),
+            ),
+          ),
+        ],
+        onChanged: (value) {
+          setState(() {
+            _selectedGroup = value;
+          });
+        },
+      ),
+    );
+  }
+
+  List<QueryDocumentSnapshot<Object?>> _filterAndSortUsers(
+    List<QueryDocumentSnapshot<Object?>> docs,
+  ) {
+    final filtered = docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+
+      if (_selectedGroup != null) {
+        final userGroupRaw = data['group'];
+        final userGroup = userGroupRaw?.toString().trim() ?? '';
+        if (userGroup.isEmpty || userGroup != _selectedGroup) {
+          return false;
+        }
+      }
+
+      if (_searchQuery.isEmpty) {
+        return true;
+      }
+
+      final name = (data['displayName'] ?? '').toString().toLowerCase();
+      final email = (data['email'] ?? '').toString().toLowerCase();
+      final phone = (data['phoneNumber'] ?? '').toString().toLowerCase();
+
+      return name.contains(_searchQuery) ||
+          email.contains(_searchQuery) ||
+          phone.contains(_searchQuery);
+    }).toList();
+
+    filtered.sort((a, b) {
+      final dataA = a.data() as Map<String, dynamic>;
+      final dataB = b.data() as Map<String, dynamic>;
+      final studentIdA = dataA['studentId']?.toString() ?? '';
+      final studentIdB = dataB['studentId']?.toString() ?? '';
+
+      if (studentIdA.isEmpty && studentIdB.isEmpty) return 0;
+      if (studentIdA.isEmpty) return 1;
+      if (studentIdB.isEmpty) return -1;
+
+      return studentIdA.compareTo(studentIdB);
+    });
+
+    return filtered;
+  }
+
+  Widget _buildCountBadge(int count) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
+        children: [
+          Icon(
+            Icons.people_alt_outlined,
+            size: 18,
+            color: Colors.blue.shade600,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$count ${count == 1 ? 'contact' : 'contacts'}',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.blue.shade700,
+            ),
+          ),
+          if (_selectedGroup != null || _searchQuery.isNotEmpty) ...[
+            const SizedBox(width: 6),
+            Text(
+              'found',
+              style: TextStyle(
+                color: Colors.blue.shade500,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserRow({
     required String userId,
     required String displayName,
     required String email,
@@ -335,213 +289,243 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     String? photoUrl,
     String? nickName,
     String? studentId,
+    String? group,
   }) {
     final currentUserId = FirebaseService.currentUser?.uid;
     final isCurrentUser = userId == currentUserId;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () async {
-          // Fetch full user data before navigating
-          final userDoc = await FirebaseService.getUserProfile(userId);
-          if (userDoc.exists && mounted) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => UserDetailScreen(
-                  userId: userId,
-                  userData: userDoc.data() as Map<String, dynamic>,
-                ),
+    return InkWell(
+      onTap: () async {
+        final userDoc = await FirebaseService.getUserProfile(userId);
+        if (userDoc.exists && mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => UserDetailScreen(
+                userId: userId,
+                userData: userDoc.data() as Map<String, dynamic>,
               ),
-            );
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            children: [
-              // Profile Picture
-              if (photoUrl != null && photoUrl.isNotEmpty)
-              CircleAvatar(
-                radius: 30,
-                backgroundImage: NetworkImage(photoUrl),
-                backgroundColor: Colors.blue.shade100,
-              )
-            else
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.blue.shade100,
-                child: Text(
-                  displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
+            ),
+          );
+        }
+      },
+      child: Padding(
+  padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (photoUrl != null && photoUrl.isNotEmpty)
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundImage: NetworkImage(photoUrl),
+                    backgroundColor: Colors.blue.shade100,
+                  )
+                else
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.blue.shade100,
+                    child: Text(
+                      displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            const SizedBox(width: 16),
-            
-            // User Info
+                if (nickName != null && nickName.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      nickName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name and Nickname - allow wrapping
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                            children: [
-                              TextSpan(text: displayName),
-                              if (nickName != null && nickName.isNotEmpty)
-                                TextSpan(
-                                  text: ' ($nickName)',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey.shade600,
-                                    fontStyle: FontStyle.italic,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                            ],
+                        child: Text(
+                          displayName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
                           ),
                         ),
                       ),
-                      if (isCurrentUser) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade100,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'You',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade700,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (group != null && group.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                'Group $group',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
+                          if (isCurrentUser)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: Colors.blue.shade200),
+                                ),
+                                child: Text(
+                                  'You',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blue.shade600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 2,
                     children: [
-                      Icon(
-                        Icons.email,
-                        size: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          email,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      _buildInfoChip(Icons.email_outlined, email),
+                      _buildInfoChip(Icons.phone_outlined, phoneNumber),
+                      if (studentId != null && studentId.isNotEmpty)
+                        _buildInfoChip(Icons.badge_outlined, studentId),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      // Mobile Number
-                      Icon(
-                        Icons.phone,
-                        size: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          phoneNumber,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Student ID on separate row
-                  if (studentId != null && studentId.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.badge,
-                          size: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            'ID: $studentId',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
               ),
             ),
           ],
         ),
       ),
-    ),
     );
   }
 
-  Widget _buildFilterChip(String label, String? groupValue) {
-    final isSelected = _selectedGroup == groupValue;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedGroup = selected ? groupValue : null;
-        });
-      },
-      backgroundColor: Colors.white,
-      selectedColor: Colors.blue.shade100,
-      checkmarkColor: Colors.blue.shade700,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.blue.shade700 : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: isSelected ? Colors.blue.shade400 : Colors.grey.shade300,
+  Widget _buildInfoChip(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1.5),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 240),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: Colors.grey.shade700,
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: Colors.grey.shade800,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(Object? error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red.shade300,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading users',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error.toString(),
+              style: TextStyle(color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Make sure Firestore API is enabled in Firebase Console',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 12,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 64,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.grey.shade600,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: TextStyle(color: Colors.grey.shade600),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
