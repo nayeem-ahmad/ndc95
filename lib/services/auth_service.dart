@@ -1,11 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
+import 'firebase_service.dart';
 
 /// Authentication service for email verification and signup
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseFirestore _firestore = FirebaseService.firestore;
   
   // Store verification codes temporarily (in production, use Firebase Functions or backend)
   static final Map<String, String> _verificationCodes = {};

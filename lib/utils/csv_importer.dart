@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/firebase_service.dart';
 
 class CsvImporter {
-  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseFirestore _firestore = FirebaseService.firestore;
 
   /// Import users from CSV file to Firestore
   static Future<Map<String, dynamic>> importFromCsv(String csvFilePath) async {

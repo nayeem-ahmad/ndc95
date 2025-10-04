@@ -26,7 +26,7 @@ class _UpdateRoleScreenState extends State<UpdateRoleScreen> {
       }
 
       // Update role to superadmin
-      await FirebaseFirestore.instance
+      await FirebaseService.firestore
           .collection('users')
           .doc(user.uid)
           .set({
