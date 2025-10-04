@@ -4,6 +4,7 @@ import '../services/firebase_service.dart';
 import '../services/role_service.dart';
 import '../models/user_role.dart';
 import 'manage_members_screen.dart';
+import 'manage_notices_screen.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -60,8 +61,9 @@ class _AdminScreenState extends State<AdminScreen> {
 
     try {
       // Get all users from Firestore
-      final QuerySnapshot snapshot =
-          await FirebaseService.firestore.collection('users').get();
+      final QuerySnapshot snapshot = await FirebaseService.firestore
+          .collection('users')
+          .get();
 
       _totalRecords = snapshot.docs.length;
 
@@ -73,7 +75,9 @@ class _AdminScreenState extends State<AdminScreen> {
         final calculatedGroup = _getGroupFromStudentId(studentId);
 
         // Debug logging
-        print('Processing user: ${data['displayName']}, StudentID: $studentId, CurrentGroup: "$currentGroup", CalculatedGroup: "$calculatedGroup"');
+        print(
+          'Processing user: ${data['displayName']}, StudentID: $studentId, CurrentGroup: "$currentGroup", CalculatedGroup: "$calculatedGroup"',
+        );
 
         // Only update if group is missing or different from calculated value
         if (currentGroup != calculatedGroup) {
@@ -157,10 +161,7 @@ class _AdminScreenState extends State<AdminScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.blue.shade50,
-            Colors.white,
-          ],
+          colors: [Colors.blue.shade50, Colors.white],
         ),
       ),
       child: SingleChildScrollView(
@@ -189,7 +190,8 @@ class _AdminScreenState extends State<AdminScreen> {
                         const SizedBox(width: 12),
                         Text(
                           'Admin Tools',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blue.shade900,
                               ),
@@ -237,7 +239,9 @@ class _AdminScreenState extends State<AdminScreen> {
                             height: 48,
                             child: ElevatedButton.icon(
                               onPressed: () {
-                                Navigator.of(context).pushNamed('/admin-import');
+                                Navigator.of(
+                                  context,
+                                ).pushNamed('/admin-import');
                               },
                               icon: const Icon(Icons.upload_file),
                               label: const Text(
@@ -283,17 +287,16 @@ class _AdminScreenState extends State<AdminScreen> {
                             _currentUserRole == UserRole.superAdmin
                                 ? Icons.admin_panel_settings
                                 : _currentUserRole == UserRole.admin
-                                    ? Icons.manage_accounts
-                                    : Icons.supervisor_account,
+                                ? Icons.manage_accounts
+                                : Icons.supervisor_account,
                             color: Colors.purple.shade700,
                             size: 24,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'Your Role',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -327,7 +330,8 @@ class _AdminScreenState extends State<AdminScreen> {
                                       color: Colors.purple.shade700,
                                     ),
                                   ),
-                                  if (_currentUserGroup != null && _currentUserGroup!.isNotEmpty) ...[
+                                  if (_currentUserGroup != null &&
+                                      _currentUserGroup!.isNotEmpty) ...[
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [
@@ -383,9 +387,8 @@ class _AdminScreenState extends State<AdminScreen> {
                         Expanded(
                           child: Text(
                             getManageMembersTitle(),
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -437,6 +440,81 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
             const SizedBox(height: 24),
 
+            if (isAdmin || isSuperAdmin) ...[
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.campaign_outlined,
+                            color: Colors.deepPurple.shade600,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Manage Notices',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Create announcements, publish event updates, and keep members informed with timely notices.',
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ManageNoticesScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.campaign),
+                          label: const Text(
+                            'Manage Notices',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple.shade500,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
             // Fix Group Fields Section
             Card(
               elevation: 2,
@@ -458,9 +536,8 @@ class _AdminScreenState extends State<AdminScreen> {
                         const SizedBox(width: 8),
                         Text(
                           'Fix Group Fields',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -482,9 +559,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       decoration: BoxDecoration(
                         color: Colors.orange.shade50,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.orange.shade200,
-                        ),
+                        border: Border.all(color: Colors.orange.shade200),
                       ),
                       child: Row(
                         children: [
@@ -613,16 +688,13 @@ class _AdminScreenState extends State<AdminScreen> {
                         const SizedBox(width: 8),
                         Text(
                           'How it works',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildInfoItem(
-                      '1. Reads all user records from Firestore',
-                    ),
+                    _buildInfoItem('1. Reads all user records from Firestore'),
                     _buildInfoItem(
                       '2. Extracts the 3rd digit from each Student ID',
                     ),
@@ -657,11 +729,7 @@ class _AdminScreenState extends State<AdminScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.check_circle,
-            size: 16,
-            color: Colors.green.shade600,
-          ),
+          Icon(Icons.check_circle, size: 16, color: Colors.green.shade600),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

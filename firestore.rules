@@ -74,6 +74,18 @@ service cloud.firestore {
       // Only admins can delete posts
       allow delete: if isAdmin();
     }
+
+    // Notices collection
+    match /notices/{noticeId} {
+      // Any authenticated user can read notices
+      allow read: if isAuthenticated();
+
+      // Only admins can create or update notices
+      allow create, update: if isAdmin();
+
+      // Only admins can delete notices
+      allow delete: if isAdmin();
+    }
     
     // Messages/Chat collection (if you add this feature)
     match /messages/{messageId} {

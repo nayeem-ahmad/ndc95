@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
+import 'dart:typed_data';
 
 /// Firebase service to handle authentication, database, and messaging
 class FirebaseService {
@@ -59,10 +61,10 @@ class FirebaseService {
   static Future<UserCredential?> signInWithGoogle() async {
     try {
       print('🔵 Starting Google Sign-In...');
-      
+
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         // User canceled the sign-in
         print('⚠️ User canceled Google Sign-In');
@@ -72,7 +74,8 @@ class FirebaseService {
       print('✅ Google account selected: ${googleUser.email}');
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
@@ -99,7 +102,9 @@ class FirebaseService {
           print('✅ User profile created successfully');
         } catch (firestoreError) {
           print('⚠️ Firestore error (non-fatal): $firestoreError');
-          print('Note: You may need to enable Firestore API in Firebase Console');
+          print(
+            'Note: You may need to enable Firestore API in Firebase Console',
+          );
           // Don't throw - allow sign-in to proceed even if Firestore fails
         }
       } else {
@@ -169,7 +174,8 @@ class FirebaseService {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       print('User granted permission');
-    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+    } else if (settings.authorizationStatus ==
+        AuthorizationStatus.provisional) {
       print('User granted provisional permission');
     } else {
       print('User declined or has not accepted permission');
@@ -200,8 +206,10 @@ class FirebaseService {
     String? photoUrl,
   }) async {
     // Check if email is the superadmin email
-    final role = email.toLowerCase() == 'nayeem.ahmad@gmail.com' ? 'superadmin' : 'member';
-    
+    final role = email.toLowerCase() == 'nayeem.ahmad@gmail.com'
+        ? 'superadmin'
+        : 'member';
+
     await _firestore.collection('users').doc(uid).set({
       'email': email,
       'displayName': displayName ?? '',
@@ -237,25 +245,45 @@ class FirebaseService {
     try {
       // Create a reference to the file location
       final storageRef = _storage.ref().child('profile_pictures/$uid.jpg');
-      
+
       // Upload the file
       final uploadTask = await storageRef.putFile(imageFile);
-      
+
       // Get the download URL
       final downloadUrl = await uploadTask.ref.getDownloadURL();
-      
+
       // Update user profile with new photo URL
-      await updateUserProfile(
-        uid: uid,
-        data: {'photoUrl': downloadUrl},
-      );
-      
+      await updateUserProfile(uid: uid, data: {'photoUrl': downloadUrl});
+
       // Update Firebase Auth profile
       await _auth.currentUser?.updatePhotoURL(downloadUrl);
-      
+
       return downloadUrl;
     } catch (e) {
       print('Error uploading profile picture: $e');
+      return null;
+    }
+  }
+
+  /// Upload a notice banner image to Firebase Storage
+  static Future<String?> uploadNoticeBanner({
+    required Uint8List data,
+    required String fileName,
+    String? contentType,
+  }) async {
+    try {
+      debugPrint('🔵 Starting Firebase Storage upload for: $fileName');
+      final normalizedName = fileName.toLowerCase().replaceAll(' ', '_');
+      final reference = _storage.ref().child('notices/banners/$normalizedName');
+      final metadata = SettableMetadata(contentType: contentType);
+      debugPrint('🔵 Uploading ${data.length} bytes to: notices/banners/$normalizedName');
+      final task = await reference.putData(data, metadata);
+      final downloadUrl = await task.ref.getDownloadURL();
+      debugPrint('✅ Firebase Storage upload complete. URL: $downloadUrl');
+      return downloadUrl;
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error uploading notice banner: $e');
+      debugPrint('Stack trace: $stackTrace');
       return null;
     }
   }
