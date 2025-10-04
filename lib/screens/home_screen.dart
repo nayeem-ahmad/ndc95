@@ -4,6 +4,7 @@ import '../services/role_service.dart';
 import 'admin_screen.dart';
 import 'directory_screen.dart';
 import 'home_dashboard_screen.dart';
+import 'memories_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -53,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return [
         HomeDashboardScreen(onGroupSelected: _handleGroupSelected),
         DirectoryScreen(key: _directoryKey),
+        const MemoriesScreen(),
         const ProfileScreen(),
         const AdminScreen(),
       ];
@@ -60,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return [
         HomeDashboardScreen(onGroupSelected: _handleGroupSelected),
         DirectoryScreen(key: _directoryKey),
+        const MemoriesScreen(),
         const ProfileScreen(),
       ];
     }
@@ -75,6 +78,10 @@ class _HomeScreenState extends State<HomeScreen> {
         BottomNavigationBarItem(
           icon: Icon(Icons.people),
           label: 'Directory',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.photo_library),
+          label: 'Memories',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),
@@ -96,6 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
           label: 'Directory',
         ),
         BottomNavigationBarItem(
+          icon: Icon(Icons.photo_library),
+          label: 'Memories',
+        ),
+        BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: 'My Profile',
         ),
@@ -106,8 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _getAppBarTitle() {
     if (_selectedIndex == 0) return 'Home';
     if (_selectedIndex == 1) return 'Directory';
-    if (_selectedIndex == 2) return 'My Profile';
-    if (_selectedIndex == 3 && _hasAdminAccess) return 'Admin';
+    if (_selectedIndex == 2) return 'Memories';
+    if (_selectedIndex == 3) return 'My Profile';
+    if (_selectedIndex == 4 && _hasAdminAccess) return 'Admin';
     return 'NDC95';
   }
 

@@ -86,6 +86,33 @@ service cloud.firestore {
       // Only admins can delete notices
       allow delete: if isAdmin();
     }
+
+    // Galleries collection (Memories feature)
+    match /galleries/{galleryId} {
+      // Anyone can read published galleries
+      allow read: if isAuthenticated() && resource.data.isPublished == true || isAdmin();
+      
+      // Only admins can create/update/delete galleries
+      allow create, update, delete: if isAdmin();
+      
+      // Media subcollection
+      match /media/{mediaId} {
+        // Anyone can read if parent gallery is published
+        allow read: if isAuthenticated() && 
+                     get(/databases/$(database)/documents/galleries/$(galleryId)).data.isPublished == true;
+        
+        // Authenticated users can upload media to published galleries
+        allow create: if isAuthenticated() && 
+                       get(/databases/$(database)/documents/galleries/$(galleryId)).data.isPublished == true;
+        
+        // Users can update their own media (for likes), admins can update any
+        allow update: if isAuthenticated() && 
+                        (request.auth.uid == resource.data.uploadedByUid || isAdmin());
+        
+        // Only admins can delete media
+        allow delete: if isAdmin();
+      }
+    }
     
     // Messages/Chat collection (if you add this feature)
     match /messages/{messageId} {
