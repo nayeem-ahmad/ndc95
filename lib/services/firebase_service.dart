@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -10,7 +11,10 @@ import 'dart:typed_data';
 /// Firebase service to handle authentication, database, and messaging
 class FirebaseService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
+    app: Firebase.app(),
+    databaseId: 'ndc95',
+  );
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FirebaseStorage _storage = FirebaseStorage.instance;
   static final GoogleSignIn _googleSignIn = GoogleSignIn();

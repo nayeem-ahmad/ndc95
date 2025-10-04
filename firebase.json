@@ -19,7 +19,13 @@
     }
   },
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "databases": {
+    "ndc95": {
+      "rules": "firestore.rules"
+    }
   },
   "functions": {
     "source": "functions",
