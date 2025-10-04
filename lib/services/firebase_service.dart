@@ -288,6 +288,83 @@ class FirebaseService {
     }
   }
 
+  /// Upload a gallery cover image to Firebase Storage
+  static Future<String?> uploadGalleryCover(
+    String galleryId,
+    String fileName,
+    List<int> fileBytes,
+  ) async {
+    try {
+      final normalizedName = fileName.toLowerCase().replaceAll(' ', '_');
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final reference = _storage.ref().child('galleries/$galleryId/cover/${timestamp}_$normalizedName');
+      
+      final metadata = SettableMetadata(
+        contentType: _getContentType(fileName),
+      );
+      
+      final task = await reference.putData(Uint8List.fromList(fileBytes), metadata);
+      final downloadUrl = await task.ref.getDownloadURL();
+      
+      return downloadUrl;
+    } catch (e) {
+      print('Error uploading gallery cover: $e');
+      return null;
+    }
+  }
+
+  /// Upload gallery media (photo/video) to Firebase Storage
+  static Future<String?> uploadGalleryMedia(
+    String galleryId,
+    String fileName,
+    List<int> fileBytes,
+    dynamic mediaType, // MediaType enum
+  ) async {
+    try {
+      final normalizedName = fileName.toLowerCase().replaceAll(' ', '_');
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final typeString = mediaType.toString().split('.').last; // 'image' or 'video'
+      final reference = _storage.ref().child('galleries/$galleryId/media/${timestamp}_$normalizedName');
+      
+      final metadata = SettableMetadata(
+        contentType: _getContentType(fileName),
+        customMetadata: {'type': typeString},
+      );
+      
+      final task = await reference.putData(Uint8List.fromList(fileBytes), metadata);
+      final downloadUrl = await task.ref.getDownloadURL();
+      
+      return downloadUrl;
+    } catch (e) {
+      print('Error uploading gallery media: $e');
+      return null;
+    }
+  }
+
+  /// Helper method to determine content type from file extension
+  static String _getContentType(String fileName) {
+    final extension = fileName.toLowerCase().split('.').last;
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'mp4':
+        return 'video/mp4';
+      case 'mov':
+        return 'video/quicktime';
+      case 'avi':
+        return 'video/x-msvideo';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
   /// Handle authentication exceptions
   static String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
