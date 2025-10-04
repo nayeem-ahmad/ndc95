@@ -20,12 +20,8 @@
   },
   "firestore": {
     "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
-  "databases": {
-    "ndc95": {
-      "rules": "firestore.rules"
-    }
+    "indexes": "firestore.indexes.json",
+    "database": "ndc95"
   },
   "functions": {
     "source": "functions",
